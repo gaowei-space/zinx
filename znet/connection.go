@@ -38,7 +38,7 @@ func NewConnection(conn *net.TCPConn, connID uint32, callbackAPI ziface.HandleFu
 func (c *Connection) StartReader() {
 	fmt.Println("Reader Goroutine is running...")
 
-	defer fmt.Println("ConnID = ", c.ConnID, " Reader is exit, remote addr is", c.RemoteAddr().String())
+	defer fmt.Println("ConnID = ", c.ConnID)
 	defer c.Stop()
 
 	for {

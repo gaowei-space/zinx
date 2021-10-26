@@ -21,6 +21,8 @@ func CallbackToClient(conn *net.TCPConn, data []byte, cnt int) error {
 		fmt.Println("write back buf error", err)
 		return errors.New("CallbackToClient Error")
 	}
+
+	return nil
 }
 
 func (s *Server) Start() {
@@ -57,24 +59,6 @@ func (s *Server) Start() {
 			cid++
 
 			go dealConn.Start()
-
-			/* go func () {
-				for {
-					buf := make([]byte, 512)
-					cnt, err := conn.Read(buf)
-					if err != nil {
-						fmt.Println("Read err ", err)
-                		continue
-					}
-
-					fmt.Printf("client send: %s, cnt = %d \n", buf, cnt)
-
-					if _, err := conn.Write(buf[:cnt]); err != nil {
-						fmt.Println("Write err ", err)
-                		continue
-					}
-				}	
-			}() */
 		}
 
 	}()
