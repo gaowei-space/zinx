@@ -3,6 +3,7 @@ package znet
 import (
 	"fmt"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -16,18 +17,18 @@ type Connection struct {
 	// 是否关闭
 	isClosed bool
 
-	// 当前链接所绑定的处理业务的方法API
-	handleAPI ziface.HandleFunc
-
 	// 告知当前链接已经退出或停止的channel
 	ExitChan chan bool
+
+	// 该链接处理的router方法
+	Router ziface.IRouter
 }
 
-func NewConnection(conn *net.TCPConn, connID uint32, callbackAPI ziface.HandleFunc) * Connection {
+func NewConnection(conn *net.TCPConn, connID uint32, router ziface.IRouter) *Connection {
 	c := &Connection{
-		Conn: conn,
-		ConnID: connID,
-		handleAPI: callbackAPI,
+		Conn:     conn,
+		ConnID:   connID,
+		Router:   router,
 		isClosed: false,
 		ExitChan: make(chan bool, 1),
 	}
@@ -42,19 +43,27 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		// 读取客户端的数据到buf重，最大512字节
-		buf := make([]byte, 512)
-		cnt, err := c.Conn.Read(buf)
+		// 读取客户端的数据到buf中
+		buf := make([]byte, utils.GlobalObject.MaxPackageSize)
+		_, err := c.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("recv buf error", err)
+			c.ExitChan <- true
 			continue
 		}
 
-		// 调用当前链接所绑定的HandleAPI
-		if err := c.handleAPI(c.Conn, buf, cnt); err != nil {
-			fmt.Println("ConnID =", c.ConnID, " handle is error", err)
-			break
+		// 得到当前链接的Request
+		req := Request{
+			conn: c,
+			data: buf,
 		}
+
+		// 执行路由方法
+		go func(request ziface.IRequest) {
+			c.Router.PreHandle(request)
+			c.Router.Handle(request)
+			c.Router.PostHandle(request)
+		}(&req)
 	}
 }
 
@@ -63,6 +72,14 @@ func (c *Connection) Start() {
 
 	// 启动从当前链接读数据的业务
 	go c.StartReader()
+
+	for {
+		select {
+		case <-c.ExitChan:
+			//得到退出消息，不再阻塞
+			return
+		}
+	}
 }
 
 func (c *Connection) Stop() {
@@ -79,14 +96,14 @@ func (c *Connection) Stop() {
 	close(c.ExitChan)
 }
 
-func (c *Connection) GetConnID() {
-
+func (c *Connection) GetConnID() uint32 {
+	return c.ConnID
 }
 
-func (c *Connection) GetTCPConnection() {
-
+func (c *Connection) GetTCPConnection() *net.TCPConn {
+	return c.Conn
 }
 
-func (c *Connection) RemoteAddr() {
-
+func (c *Connection) RemoteAddr() net.Addr {
+	return c.Conn.RemoteAddr()
 }
