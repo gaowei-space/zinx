@@ -44,7 +44,7 @@ func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandl
 func (c *Connection) StartReader() {
 	fmt.Println("[Reader Goroutine is running...]")
 
-	defer fmt.Println("ConnID = ", c.ConnID)
+	defer fmt.Println("[Reader Goroutine is exit.] ConnID =", c.ConnID)
 	defer c.Stop()
 
 	for {
@@ -88,19 +88,20 @@ func (c *Connection) StartReader() {
 
 // 写消息的 Goroutine,  专门发送给客户端消息的模块
 func (c *Connection) StartWriter() {
-	fmt.Println("[Writer Gorouting is running...]")
-	defer fmt.Println(c.RemoteAddr().String(). "conn Writer exit")
+	fmt.Println("[Writer Goroutine is running...]")
+
+	defer fmt.Println("[Writer Goroutine is exit.] ConnID =", c.ConnID)
 
 	// 不断的阻塞的等待 channel 的消息，进行写给客户端
 	for {
 		select {
-		case data:= <- c.msgChan:
-			if _,err:=c.Conn.Write(data); err != nil {
-				fmt.Println("Send data error,",err)
+		case data := <-c.msgChan:
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("Send data error,", err)
 				return
 			}
 
-		case <- c.ExitChan:
+		case <-c.ExitChan:
 			// 代表Reader已经退出，此时Writer也要退出
 			return
 		}
