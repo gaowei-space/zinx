@@ -48,6 +48,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 		ExitChan:   make(chan bool, 1),
 		msgChan:    make(chan []byte),
 		MsgHandler: msgHandler,
+		property:   make(map[string]interface{}),
 	}
 
 	c.TcpServer.GetConnManager().Add(c)
@@ -223,6 +224,14 @@ func (c *Connection) GetProperty(key string) (interface{}, error) {
 	} else {
 		return nil, errors.New("no property found")
 	}
+}
+
+// 获取所有链接属性
+func (c *Connection) GetProperties() map[string]interface{} {
+	c.propertyLock.RLock()
+	defer c.propertyLock.RUnlock()
+
+	return c.property
 }
 
 // 移除链接属性

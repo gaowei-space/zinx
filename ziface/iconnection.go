@@ -28,6 +28,9 @@ type IConnection interface {
 	// 获取链接属性
 	GetProperty(key string) (interface{}, error)
 
+	// 获取所有链接属性
+	GetProperties() map[string]interface{}
+
 	// 移除链接属性
 	RemoveProperty(key string)
 }
