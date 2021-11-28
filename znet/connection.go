@@ -129,6 +129,9 @@ func (c *Connection) Start() {
 	// 启动从当前链接回写的模块
 	go c.StartWriter()
 
+	// 调用创建链接之后的hook方法
+	c.TcpServer.CallOnConnStart(c)
+
 	for {
 		select {
 		case <-c.ExitChan:
@@ -145,6 +148,9 @@ func (c *Connection) Stop() {
 		return
 	}
 	c.isClosed = true
+
+	// 调用销毁链接之前的hook方法
+	c.TcpServer.CallOnConnStop(c)
 
 	// 关闭链接
 	c.Conn.Close()
