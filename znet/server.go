@@ -21,6 +21,9 @@ type Server struct {
 func (s *Server) Start() {
 
 	go func() {
+		// 0 开启消息队列和worker工作池
+		s.MsgHandler.StartWorkerPool()
+
 		fmt.Printf("[Zinx] Server Name: %s, Listenner at IP: %s, Port: %d is starting \n", utils.GlobalObject.Name, utils.GlobalObject.Host, utils.GlobalObject.TcpPort)
 
 		fmt.Printf("[Start] Resolve %s:%d \n", s.IP, s.Port)
